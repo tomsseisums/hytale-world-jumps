@@ -45,5 +45,7 @@ build/
 devserver
 /.idea/
 
+bin/
+
 ### Reference sources for this plugin are not to be committed ###
 reference-sources/

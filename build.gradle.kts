@@ -9,3 +9,9 @@ repositories {
 dependencies {
     // Any external dependency you also want to include
 }
+
+tasks.register("clearWorld") {
+    doLast {
+        file("devserver/universe").listFiles()?.forEach { it.deleteRecursively() }
+    }
+}

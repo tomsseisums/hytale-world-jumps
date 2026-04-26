@@ -4,10 +4,9 @@
       "Bash(find:*)",
       "Bash(./gradlew build:*)",
       "Bash(./gradlew setupServer)",
+      "Bash(./gradlew clearWorld)",
       "Bash(./gradlew runServer)"
     ],
-    "additionalDirectories": [
-      "/Users/tomsseisums/Projects/hytale-modding/patcher/hytale-server"
-    ]
+    "additionalDirectories": []
   }
 }
