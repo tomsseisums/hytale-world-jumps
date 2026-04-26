@@ -23,9 +23,7 @@
     "BlockSoundSetId": "Stone",
     "PhysicalMaterialId": "Stone",
     "VariantRotation": "NESW",
-    "Flags": {
-      "IsUsable": true
-    },
+    "Flags": {},
     "Gathering": {
       "Breaking": {
         "GatherType": "Unbreakable"
@@ -48,9 +46,8 @@
         "Scale": 0.8
       }
     ],
-    "InteractionHint": "server.interactionHints.worldJump",
     "Interactions": {
-      "Use": {
+      "CollisionEnter": {
         "Interactions": [
           {
             "Type": "WorldJumpPortal",
