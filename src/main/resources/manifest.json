@@ -1,18 +1,15 @@
 {
     "Group": "protogax",
     "Name": "HytaleWorldJumps",
-    "Version": "0.0.0",
-    "Description": "Description of your plugin",
+    "Version": "1.0.0",
+    "Description": "Multi-world portals with per-world inventories for Creative and Exploration",
     "Authors": [
         {
-            "Name": "Your Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "Protogax"
         }
     ],
-    "Website": "https://your-plugin-website.com",
     "DisabledByDefault": false,
-    "IncludesAssetPack": false,
+    "IncludesAssetPack": true,
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
