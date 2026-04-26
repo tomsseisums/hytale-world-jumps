@@ -1,7 +1,7 @@
 {
   "TranslationProperties": {
-    "Name": "Return Portal",
-    "Description": "Returns to the Exploration world"
+    "Name": "Default Portal",
+    "Description": "Teleports to the default world"
   },
   "Icon": "Icons/ItemsGenerated/Portal_Device.png",
   "Categories": [
@@ -31,6 +31,9 @@
         "GatherType": "Unbreakable"
       }
     },
+    "Tint": [
+      "#404040"
+    ],
     "Light": {
       "Color": "#ff7",
       "Radius": 3
@@ -49,7 +52,7 @@
       "CollisionEnter": {
         "Interactions": [
           {
-            "Type": "ReturnToExploration",
+            "Type": "WorldJumpPortal",
             "Next": {
               "Type": "Simple",
               "Effects": {

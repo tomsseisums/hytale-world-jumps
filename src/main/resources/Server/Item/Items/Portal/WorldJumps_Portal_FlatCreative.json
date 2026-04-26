@@ -31,6 +31,9 @@
         "GatherType": "Unbreakable"
       }
     },
+    "Tint": [
+      "#00ff00"
+    ],
     "Light": {
       "Color": "#7f7",
       "Radius": 3

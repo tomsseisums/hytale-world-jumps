@@ -41,12 +41,12 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
     public static final BuilderCodec<WorldJumpInteraction> CODEC = BuilderCodec.builder(
             WorldJumpInteraction.class, WorldJumpInteraction::new, SimpleInstantInteraction.CODEC
         )
-        .documentation("Teleports the Player to a named permanent world, creating it if required.")
+        .documentation("Teleports the Player to a named world (creating it if required), or to the default world when WorldName is omitted.")
         .<String>appendInherited(
             new KeyedCodec<>("WorldName", Codec.STRING),
             (o, i) -> o.worldName = i, o -> o.worldName, (o, p) -> o.worldName = p.worldName
         )
-        .documentation("The name of the permanent world to teleport to.")
+        .documentation("The target world name. When omitted, teleports to the default (exploration) world.")
         .add()
         .<String>appendInherited(
             new KeyedCodec<>("WorldGenType", Codec.STRING),
@@ -86,6 +86,18 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
 
         World currentWorld = commandBuffer.getExternalData().getWorld();
         Universe universe = Universe.get();
+
+        // When no WorldName is configured, jump to the default world
+        if (this.worldName == null || this.worldName.isEmpty()) {
+            World defaultWorld = universe.getDefaultWorld();
+            if (defaultWorld == null) {
+                LOGGER.at(Level.SEVERE).log("Cannot teleport player — no default world available");
+                return;
+            }
+            teleportToLoadedWorld(ref, commandBuffer, defaultWorld, playerComponent);
+            return;
+        }
+
         World targetWorld = universe.getWorld(this.worldName);
 
         if (targetWorld != null) {
