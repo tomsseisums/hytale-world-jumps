@@ -24,6 +24,11 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.spawn.ISpawnProvider;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.universe.world.WorldConfig;
+import com.hypixel.hytale.server.core.universe.world.worldgen.provider.FlatWorldGenProvider;
+import com.hypixel.hytale.protocol.Color;
+
+import java.nio.file.Path;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -107,15 +112,34 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
             if (universe.isWorldLoadable(this.worldName)) {
                 worldFuture = universe.loadWorld(this.worldName);
             } else {
-                worldFuture = universe.addWorld(this.worldName, this.worldGenType != null ? this.worldGenType : "Flat", null);
-                worldFuture.thenAccept(world -> {
-                    if (world.getWorldConfig().getDisplayName() == null) {
-                        world.getWorldConfig().setDisplayName(
-                            com.hypixel.hytale.server.core.universe.world.WorldConfig.formatDisplayName(this.worldName)
-                        );
+                String genType = this.worldGenType != null ? this.worldGenType : "Flat";
+                WorldConfig config = new WorldConfig();
+                config.setDisplayName(WorldConfig.formatDisplayName(this.worldName));
+                config.setGameMode(com.hypixel.hytale.protocol.GameMode.Creative);
+
+                if ("Flat".equals(genType)) {
+                    // Flat worlds need proper layers with environment set on all sections
+                    // to avoid client-side collision trigger bugs with minimal flat gen
+                    String env = "Env_Zone1_Plains";
+                    config.setWorldGenProvider(new FlatWorldGenProvider(
+                        new Color((byte) 87, (byte) -118, (byte) 36),
+                        new FlatWorldGenProvider.Layer[]{
+                            new FlatWorldGenProvider.Layer(0, 1, env, "Rock_Bedrock"),
+                            new FlatWorldGenProvider.Layer(1, 70, env, "Rock_Stone"),
+                            new FlatWorldGenProvider.Layer(70, 78, env, "Soil_Dirt"),
+                            new FlatWorldGenProvider.Layer(78, 80, env, "Soil_Grass"),
+                            new FlatWorldGenProvider.Layer(80, 320, env, "Empty")
+                        }
+                    ));
+                } else {
+                    var providerCodec = com.hypixel.hytale.server.core.universe.world.worldgen.provider.IWorldGenProvider.CODEC.getCodecFor(genType);
+                    if (providerCodec != null) {
+                        config.setWorldGenProvider(providerCodec.getDefaultValue());
                     }
-                    world.getWorldConfig().setGameMode(com.hypixel.hytale.protocol.GameMode.Creative);
-                });
+                }
+
+                Path savePath = universe.validateWorldPath(this.worldName);
+                worldFuture = universe.makeWorld(this.worldName, savePath, config);
             }
 
             // Wait for the world to load, then teleport via Teleport component on the current world's thread

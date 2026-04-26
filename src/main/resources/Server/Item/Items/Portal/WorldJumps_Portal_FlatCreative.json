@@ -24,7 +24,7 @@
     "PhysicalMaterialId": "Stone",
     "VariantRotation": "NESW",
     "Flags": {
-      "IsUsable": false
+      "IsUsable": true
     },
     "Gathering": {
       "Breaking": {
@@ -48,8 +48,9 @@
         "Scale": 0.8
       }
     ],
+    "InteractionHint": "server.interactionHints.worldJump",
     "Interactions": {
-      "CollisionEnter": {
+      "Use": {
         "Interactions": [
           {
             "Type": "WorldJumpPortal",
