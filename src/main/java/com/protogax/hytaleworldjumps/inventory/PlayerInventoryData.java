@@ -2,11 +2,12 @@ package com.protogax.hytaleworldjumps.inventory;
 
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.InventoryComponent;
-import com.hypixel.hytale.server.core.inventory.InventoryUtils;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.CombinedItemContainer;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import com.hypixel.hytale.logger.HytaleLogger;
@@ -94,10 +95,17 @@ public class PlayerInventoryData {
         }
 
         try {
-            InventoryUtils.setActiveSlot(ref, -1, (byte) this.activeHotbarSlot, accessor);
+            InventoryComponent.Hotbar hotbar = accessor.getComponent(ref, InventoryComponent.Hotbar.getComponentType());
+            if (hotbar != null) {
+                hotbar.setActiveSlot((byte) this.activeHotbarSlot, ref, accessor);
+            }
+            PlayerRef playerRef = accessor.getComponent(ref, PlayerRef.getComponentType());
+            if (playerRef != null) {
+                playerRef.getPacketHandler().writeNoCache(new SetActiveSlot(-1, this.activeHotbarSlot));
+            }
         } catch (Exception ignored) {
         }
-        LOGGER.at(Level.FINE).log("[WorldJumps] RESTORE: applied %d items across %d capacity", slotMap.size(), capacity);
+        LOGGER.at(Level.FINE).log("[WorldJumps] RESTORE: applied %d items across %d capacity, activeSlot=%d", slotMap.size(), capacity, this.activeHotbarSlot);
     }
 
     public List<ItemData> getItems() {

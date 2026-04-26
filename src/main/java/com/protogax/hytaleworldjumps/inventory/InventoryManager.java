@@ -5,8 +5,11 @@ import com.google.gson.GsonBuilder;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.component.ComponentAccessor;
+import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
 import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.InventoryUtils;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
@@ -81,12 +84,21 @@ public class InventoryManager {
             return;
         }
 
-        // First visit: clear inventory
+        // First visit: clear inventory and reset active slot
         LOGGER.at(Level.FINE).log("[WorldJumps] First visit to '%s' for player=%s — clearing inventory", worldName, playerId);
         Ref<EntityStore> ref = player.getReference();
         if (ref != null && ref.isValid()) {
             try {
-                InventoryUtils.clear(ref, ref.getStore());
+                ComponentAccessor<EntityStore> accessor = ref.getStore();
+                InventoryUtils.clear(ref, accessor);
+                InventoryComponent.Hotbar hotbar = accessor.getComponent(ref, InventoryComponent.Hotbar.getComponentType());
+                if (hotbar != null) {
+                    hotbar.setActiveSlot((byte) 0, ref, accessor);
+                }
+                PlayerRef playerRef = accessor.getComponent(ref, PlayerRef.getComponentType());
+                if (playerRef != null) {
+                    playerRef.getPacketHandler().writeNoCache(new SetActiveSlot(-1, 0));
+                }
             } catch (Exception ignored) {
             }
         }
