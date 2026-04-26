@@ -77,7 +77,7 @@ public class WorldTransitionListener {
                 return;
             }
 
-            LOGGER.at(Level.INFO).log("[WorldJumps] ADD: player=%s entering world='%s'", playerId, worldName);
+            LOGGER.at(Level.FINE).log("[WorldJumps] ADD: player=%s entering world='%s'", playerId, worldName);
             inventoryManager.setPendingLoad(playerId, worldName);
         } catch (Exception e) {
             LOGGER.at(Level.SEVERE).log("[WorldJumps] ERROR in onAddPlayer: %s", e.getMessage());
@@ -102,6 +102,7 @@ public class WorldTransitionListener {
                 return;
             }
 
+            LOGGER.at(Level.FINE).log("[WorldJumps] READY: player=%s — applying pending inventory load", playerId);
             inventoryManager.applyPendingLoad(player, playerId);
 
             // Determine world name from the entity store's world

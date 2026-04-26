@@ -9,13 +9,19 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.CombinedItemContainer;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import com.hypixel.hytale.logger.HytaleLogger;
+
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class PlayerInventoryData {
+
+    @Nonnull
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private List<ItemData> items = new ArrayList<>();
     private int activeHotbarSlot = 0;
@@ -27,6 +33,7 @@ public class PlayerInventoryData {
         PlayerInventoryData data = new PlayerInventoryData();
         Ref<EntityStore> ref = player.getReference();
         if (ref == null || !ref.isValid()) {
+            LOGGER.at(Level.WARNING).log("[WorldJumps] SNAPSHOT: player ref is null/invalid — returning empty snapshot");
             return data;
         }
 
@@ -35,6 +42,7 @@ public class PlayerInventoryData {
 
         CombinedItemContainer combined = InventoryComponent.getCombined(accessor, ref, InventoryComponent.EVERYTHING);
         if (combined == null) {
+            LOGGER.at(Level.WARNING).log("[WorldJumps] SNAPSHOT: getCombined returned null — returning empty snapshot");
             return data;
         }
 
@@ -45,6 +53,7 @@ public class PlayerInventoryData {
                 data.items.add(new ItemData(i, item));
             }
         }
+        LOGGER.at(Level.FINE).log("[WorldJumps] SNAPSHOT: captured %d items, activeHotbar=%d", data.items.size(), data.activeHotbarSlot);
 
         return data;
     }
@@ -52,12 +61,14 @@ public class PlayerInventoryData {
     public void applyToPlayer(@Nonnull Player player) {
         Ref<EntityStore> ref = player.getReference();
         if (ref == null || !ref.isValid()) {
+            LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: player ref is null/invalid — aborting restore");
             return;
         }
 
         ComponentAccessor<EntityStore> accessor = ref.getStore();
         CombinedItemContainer combined = InventoryComponent.getCombined(accessor, ref, InventoryComponent.EVERYTHING);
         if (combined == null) {
+            LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: getCombined returned null — aborting restore");
             return;
         }
 
@@ -68,6 +79,8 @@ public class PlayerInventoryData {
             ItemStack restored = itemData.toItemStack();
             if (restored != null && !restored.isEmpty()) {
                 slotMap.put(itemData.getSlot(), restored);
+            } else {
+                LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: slot %d toItemStack failed (itemId=%s)", itemData.getSlot(), itemData.getItemId());
             }
         }
 
@@ -75,7 +88,8 @@ public class PlayerInventoryData {
             ItemStack item = slotMap.getOrDefault((int) i, ItemStack.EMPTY);
             try {
                 combined.setItemStackForSlot(i, item);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: setItemStackForSlot(%d) threw: %s", i, e.getMessage());
             }
         }
 
@@ -83,6 +97,7 @@ public class PlayerInventoryData {
             InventoryUtils.setActiveSlot(ref, -1, (byte) this.activeHotbarSlot, accessor);
         } catch (Exception ignored) {
         }
+        LOGGER.at(Level.FINE).log("[WorldJumps] RESTORE: applied %d items across %d capacity", slotMap.size(), capacity);
     }
 
     public List<ItemData> getItems() {

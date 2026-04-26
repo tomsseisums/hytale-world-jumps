@@ -30,6 +30,9 @@ import com.hypixel.hytale.protocol.Color;
 
 import java.nio.file.Path;
 
+import com.protogax.hytaleworldjumps.HytaleWorldJumpsPlugin;
+import com.protogax.hytaleworldjumps.inventory.InventoryManager;
+
 import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.UUID;
@@ -91,6 +94,19 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
 
         World currentWorld = commandBuffer.getExternalData().getWorld();
         Universe universe = Universe.get();
+
+        // Save current inventory before teleporting
+        UUIDComponent uuidComp = commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+        if (uuidComp != null) {
+            InventoryManager invManager = HytaleWorldJumpsPlugin.getInventoryManager();
+            if (invManager != null) {
+                String currentWorldName = currentWorld != null ? currentWorld.getName() : null;
+                if (currentWorldName != null) {
+                    LOGGER.at(Level.FINE).log("[WorldJumps] PRE-TELEPORT: saving inventory for player=%s in world='%s'", uuidComp.getUuid(), currentWorldName);
+                    invManager.saveInventory(playerComponent, uuidComp.getUuid(), currentWorldName);
+                }
+            }
+        }
 
         // When no WorldName is configured, jump to the default world
         if (this.worldName == null || this.worldName.isEmpty()) {

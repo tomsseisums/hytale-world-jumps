@@ -24,7 +24,13 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
+    private static InventoryManager inventoryManagerInstance;
+
     private InventoryManager inventoryManager;
+
+    public static InventoryManager getInventoryManager() {
+        return inventoryManagerInstance;
+    }
 
     public HytaleWorldJumpsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -36,6 +42,7 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
 
         WorldManager worldManager = new WorldManager();
         inventoryManager = new InventoryManager(getDataDirectory());
+        inventoryManagerInstance = inventoryManager;
         WorldTransitionListener listener = new WorldTransitionListener(worldManager, inventoryManager);
 
         // Register events

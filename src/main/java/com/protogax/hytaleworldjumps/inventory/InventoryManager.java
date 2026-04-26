@@ -48,8 +48,7 @@ public class InventoryManager {
     public void saveInventory(@Nonnull Player player, @Nonnull UUID playerId, @Nonnull String worldName) {
         PlayerInventoryData snapshot = PlayerInventoryData.fromPlayer(player);
         cache.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>()).put(worldName, snapshot);
-
-        LOGGER.at(Level.FINE).log("[WorldJumps] SAVE: player=%s world='%s'", playerId, worldName);
+        LOGGER.at(Level.FINE).log("[WorldJumps] SAVE: player=%s world='%s' items=%d", playerId, worldName, snapshot.getItems().size());
         ioExecutor.submit(() -> saveToDisk(playerId, worldName, snapshot));
     }
 
@@ -61,28 +60,29 @@ public class InventoryManager {
     public void applyPendingLoad(@Nonnull Player player, @Nonnull UUID playerId) {
         String worldName = pendingLoad.remove(playerId);
         if (worldName == null) {
-            LOGGER.at(Level.FINE).log("[WorldJumps] PENDING-LOAD: no pending load for player=%s", playerId);
             return;
         }
 
         // Try cache first
         ConcurrentHashMap<String, PlayerInventoryData> playerCache = cache.get(playerId);
         if (playerCache != null && playerCache.containsKey(worldName)) {
-            playerCache.get(worldName).applyToPlayer(player);
-            LOGGER.at(Level.FINE).log("[WorldJumps] LOAD (cache): player=%s world='%s'", playerId, worldName);
+            PlayerInventoryData cached = playerCache.get(worldName);
+            LOGGER.at(Level.FINE).log("[WorldJumps] LOAD (cache): player=%s world='%s' items=%d", playerId, worldName, cached.getItems().size());
+            cached.applyToPlayer(player);
             return;
         }
 
         // Try disk
         PlayerInventoryData data = loadFromDisk(playerId, worldName);
         if (data != null) {
+            LOGGER.at(Level.FINE).log("[WorldJumps] LOAD (disk): player=%s world='%s' items=%d", playerId, worldName, data.getItems().size());
             cache.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>()).put(worldName, data);
             data.applyToPlayer(player);
-            LOGGER.at(Level.FINE).log("[WorldJumps] LOAD (disk): player=%s world='%s'", playerId, worldName);
             return;
         }
 
         // First visit: clear inventory
+        LOGGER.at(Level.FINE).log("[WorldJumps] First visit to '%s' for player=%s — clearing inventory", worldName, playerId);
         Ref<EntityStore> ref = player.getReference();
         if (ref != null && ref.isValid()) {
             try {
@@ -90,7 +90,6 @@ public class InventoryManager {
             } catch (Exception ignored) {
             }
         }
-        LOGGER.at(Level.INFO).log("[WorldJumps] First visit to '%s' for player=%s — empty inventory", worldName, playerId);
     }
 
     public void evict(@Nonnull UUID playerId) {
