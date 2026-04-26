@@ -54,8 +54,7 @@
         "Interactions": [
           {
             "Type": "WorldJumpPortal",
-            "WorldName": "flat-creative",
-            "WorldGenType": "Flat",
+            "TargetWorld": "FlatCreative",
             "Next": {
               "Type": "Simple",
               "Effects": {

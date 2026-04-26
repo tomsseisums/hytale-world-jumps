@@ -31,6 +31,8 @@ import com.hypixel.hytale.protocol.Color;
 import java.nio.file.Path;
 
 import com.protogax.hytaleworldjumps.HytaleWorldJumpsPlugin;
+import com.protogax.hytaleworldjumps.WorldJumpsConfig;
+import com.protogax.hytaleworldjumps.WorldManager;
 import com.protogax.hytaleworldjumps.inventory.InventoryManager;
 
 import javax.annotation.Nonnull;
@@ -49,23 +51,16 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
     public static final BuilderCodec<WorldJumpInteraction> CODEC = BuilderCodec.builder(
             WorldJumpInteraction.class, WorldJumpInteraction::new, SimpleInstantInteraction.CODEC
         )
-        .documentation("Teleports the Player to a named world (creating it if required), or to the default world when WorldName is omitted.")
+        .documentation("Teleports the Player to a world. TargetWorld can be 'HytaleCreative' or 'FlatCreative'. When omitted, teleports to the default world.")
         .<String>appendInherited(
-            new KeyedCodec<>("WorldName", Codec.STRING),
-            (o, i) -> o.worldName = i, o -> o.worldName, (o, p) -> o.worldName = p.worldName
+            new KeyedCodec<>("TargetWorld", Codec.STRING),
+            (o, i) -> o.targetWorld = i, o -> o.targetWorld, (o, p) -> o.targetWorld = p.targetWorld
         )
-        .documentation("The target world name. When omitted, teleports to the default (exploration) world.")
-        .add()
-        .<String>appendInherited(
-            new KeyedCodec<>("WorldGenType", Codec.STRING),
-            (o, i) -> o.worldGenType = i, o -> o.worldGenType, (o, p) -> o.worldGenType = p.worldGenType
-        )
-        .documentation("The world generator type to use when creating the world (e.g., 'Flat', 'Hytale').")
+        .documentation("The target world key: 'HytaleCreative' or 'FlatCreative'. When omitted, teleports to the default (exploration) world.")
         .add()
         .build();
 
-    private String worldName;
-    private String worldGenType;
+    private String targetWorld;
 
     public WorldJumpInteraction() {
     }
@@ -108,8 +103,16 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
             }
         }
 
-        // When no WorldName is configured, jump to the default world
-        if (this.worldName == null || this.worldName.isEmpty()) {
+        // Resolve TargetWorld key to actual world name; null/empty treated as Default
+        String effectiveTarget = (this.targetWorld == null || this.targetWorld.isEmpty()) ? "Default" : this.targetWorld;
+        String resolvedWorldName = WorldJumpsConfig.resolveWorldName(effectiveTarget);
+        if (resolvedWorldName == null) {
+            LOGGER.at(Level.SEVERE).log("[WorldJumps] Unknown TargetWorld '%s' — must be 'Default', 'HytaleCreative', or 'FlatCreative'", effectiveTarget);
+            return;
+        }
+
+        // Default target uses the universe's default world directly
+        if ("Default".equals(effectiveTarget)) {
             World defaultWorld = universe.getDefaultWorld();
             if (defaultWorld == null) {
                 LOGGER.at(Level.SEVERE).log("Cannot teleport player — no default world available");
@@ -119,23 +122,25 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
             return;
         }
 
-        World targetWorld = universe.getWorld(this.worldName);
+        // Determine world gen type from the target
+        String genType = "HytaleCreative".equals(this.targetWorld) ? "Hytale" : "Flat";
 
-        if (targetWorld != null) {
-            teleportToLoadedWorld(ref, commandBuffer, targetWorld, playerComponent);
+        World existingWorld = universe.getWorld(resolvedWorldName);
+
+        if (existingWorld != null) {
+            teleportToLoadedWorld(ref, commandBuffer, existingWorld, playerComponent);
         } else {
             CompletableFuture<World> worldFuture;
-            if (universe.isWorldLoadable(this.worldName)) {
-                worldFuture = universe.loadWorld(this.worldName);
+            if (universe.isWorldLoadable(resolvedWorldName)) {
+                worldFuture = universe.loadWorld(resolvedWorldName);
             } else {
-                String genType = this.worldGenType != null ? this.worldGenType : "Flat";
                 WorldConfig config = new WorldConfig();
-                config.setDisplayName(WorldConfig.formatDisplayName(this.worldName));
+                WorldJumpsConfig pluginConfig = HytaleWorldJumpsPlugin.getPluginConfig();
+                String displayName = pluginConfig != null ? pluginConfig.getDisplayName(resolvedWorldName) : null;
+                config.setDisplayName(displayName != null ? displayName : WorldConfig.formatDisplayName(resolvedWorldName));
                 config.setGameMode(com.hypixel.hytale.protocol.GameMode.Creative);
 
                 if ("Flat".equals(genType)) {
-                    // Flat worlds need proper layers with environment set on all sections
-                    // to avoid client-side collision trigger bugs with minimal flat gen
                     String env = "Env_Zone1_Plains";
                     config.setWorldGenProvider(new FlatWorldGenProvider(
                         new Color((byte) 87, (byte) -118, (byte) 36),
@@ -154,11 +159,11 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
                     }
                 }
 
-                Path savePath = universe.validateWorldPath(this.worldName);
-                worldFuture = universe.makeWorld(this.worldName, savePath, config);
+                Path savePath = universe.validateWorldPath(resolvedWorldName);
+                worldFuture = universe.makeWorld(resolvedWorldName, savePath, config);
             }
 
-            // Wait for the world to load, then teleport via Teleport component on the current world's thread
+            // After world loads, apply display name and teleport
             PlayerRef playerRefComponent = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
             UUIDComponent uuidComponent = commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
             if (playerRefComponent == null || uuidComponent == null) {
@@ -167,6 +172,12 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
             UUID playerUUID = uuidComponent.getUuid();
 
             worldFuture.orTimeout(1L, TimeUnit.MINUTES).thenAcceptAsync(world -> {
+                // Apply display name on load (in case it was loaded from disk without one)
+                WorldManager worldManager = HytaleWorldJumpsPlugin.getWorldManager();
+                if (worldManager != null) {
+                    worldManager.applyDisplayName(world);
+                }
+
                 Ref<EntityStore> entityRef = playerRefComponent.getReference();
                 if (entityRef == null || !entityRef.isValid()) {
                     return;
@@ -189,7 +200,7 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
                 Teleport teleport = Teleport.createForPlayer(world, spawnPoint);
                 accessor.addComponent(entityRef, Teleport.getComponentType(), teleport);
             }, currentWorld).exceptionally(ex -> {
-                LOGGER.at(Level.SEVERE).withCause(ex).log("Failed to create/load world '%s'", this.worldName);
+                LOGGER.at(Level.SEVERE).withCause(ex).log("Failed to create/load world '%s'", resolvedWorldName);
                 return null;
             });
         }

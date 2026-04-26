@@ -3,6 +3,7 @@ package com.protogax.hytaleworldjumps;
 import com.hypixel.hytale.event.EventPriority;
 import com.hypixel.hytale.event.EventRegistry;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.event.events.BootEvent;
 import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.DrainPlayerFromWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
@@ -11,6 +12,7 @@ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Int
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.protogax.hytaleworldjumps.interaction.WorldJumpInteraction;
 import com.protogax.hytaleworldjumps.system.PortalBreakProtectionSystem;
@@ -25,11 +27,22 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private static InventoryManager inventoryManagerInstance;
+    private static WorldJumpsConfig configInstance;
+    private static WorldManager worldManagerInstance;
 
+    private final Config<WorldJumpsConfig> config = this.withConfig("config", WorldJumpsConfig.CODEC);
     private InventoryManager inventoryManager;
 
     public static InventoryManager getInventoryManager() {
         return inventoryManagerInstance;
+    }
+
+    public static WorldJumpsConfig getPluginConfig() {
+        return configInstance;
+    }
+
+    public static WorldManager getWorldManager() {
+        return worldManagerInstance;
     }
 
     public HytaleWorldJumpsPlugin(@Nonnull JavaPluginInit init) {
@@ -40,13 +53,18 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
     protected void setup() {
         LOGGER.at(Level.INFO).log("[WorldJumps] Setup starting...");
 
-        WorldManager worldManager = new WorldManager();
+        config.save();
+        configInstance = config.get();
+
+        WorldManager worldManager = new WorldManager(configInstance);
+        worldManagerInstance = worldManager;
         inventoryManager = new InventoryManager(getDataDirectory());
         inventoryManagerInstance = inventoryManager;
         WorldTransitionListener listener = new WorldTransitionListener(worldManager, inventoryManager);
 
         // Register events
         EventRegistry registry = getEventRegistry();
+        registry.register(BootEvent.class, event -> worldManager.applyDisplayNames());
         registry.registerGlobal(EventPriority.NORMAL, DrainPlayerFromWorldEvent.class, listener::onDrainPlayer);
         registry.registerGlobal(EventPriority.NORMAL, AddPlayerToWorldEvent.class, listener::onAddPlayer);
         registry.registerGlobal(EventPriority.NORMAL, PlayerReadyEvent.class, listener::onPlayerReady);

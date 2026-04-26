@@ -54,6 +54,7 @@
         "Interactions": [
           {
             "Type": "WorldJumpPortal",
+            "TargetWorld": "Default",
             "Next": {
               "Type": "Simple",
               "Effects": {
