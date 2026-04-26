@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(./gradlew setupServer)",
+      "Bash(./gradlew runServer)"
+    ],
+    "additionalDirectories": [
+      "/Users/tomsseisums/Projects/hytale-modding/patcher/hytale-server"
+    ]
+  }
+}

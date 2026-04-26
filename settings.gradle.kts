@@ -1,4 +1,4 @@
-rootProject.name = "dev.hytalemodding"
+rootProject.name = "com.protogax.hytaleworldjumps"
 
 plugins {
     // See documentation on https://scaffoldit.dev
@@ -9,7 +9,7 @@ plugins {
 // Create a folder named "common", then configure details with `common { }`
 
 hytale {
-    usePatchline("release")
+    usePatchline("pre-release")
     useVersion("latest")
 
     repositories {
@@ -21,8 +21,8 @@ hytale {
     }
 
     manifest {
-        Group = "HytaleModding"
-        Name = "ExamplePlugin"
-        Main = "dev.hytalemodding.ExamplePlugin"
+        Group = "protogax"
+        Name = "HytaleWorldJumps"
+        Main = "com.protogax.hytaleworldjumps.HytaleWorldJumpsPlugin"
     }
 }
