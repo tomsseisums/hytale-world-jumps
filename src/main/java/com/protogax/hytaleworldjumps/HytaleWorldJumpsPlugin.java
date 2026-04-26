@@ -10,9 +10,11 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import com.protogax.hytaleworldjumps.interaction.ProtectedBreakInteraction;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.protogax.hytaleworldjumps.interaction.ReturnInteraction;
 import com.protogax.hytaleworldjumps.interaction.WorldJumpInteraction;
+import com.protogax.hytaleworldjumps.system.PortalBreakProtectionSystem;
 import com.protogax.hytaleworldjumps.inventory.InventoryManager;
 import com.protogax.hytaleworldjumps.listener.WorldTransitionListener;
 
@@ -47,7 +49,9 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
         // Register interactions
         Interaction.CODEC.register("WorldJumpPortal", WorldJumpInteraction.class, WorldJumpInteraction.CODEC);
         Interaction.CODEC.register("ReturnToExploration", ReturnInteraction.class, ReturnInteraction.CODEC);
-        Interaction.CODEC.register("ProtectedBreak", ProtectedBreakInteraction.class, ProtectedBreakInteraction.CODEC);
+        // Register ECS systems
+        ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
+        entityStoreRegistry.registerSystem(new PortalBreakProtectionSystem());
 
         LOGGER.at(Level.INFO).log("[WorldJumps] Setup complete — events and interactions registered.");
     }
