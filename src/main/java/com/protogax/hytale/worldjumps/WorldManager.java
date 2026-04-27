@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps;
+package com.protogax.hytale.worldjumps;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.Universe;

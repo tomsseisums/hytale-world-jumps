@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps;
+package com.protogax.hytale.worldjumps;
 
 import com.hypixel.hytale.event.EventPriority;
 import com.hypixel.hytale.event.EventRegistry;
@@ -14,15 +14,15 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
-import com.protogax.hytaleworldjumps.interaction.WorldJumpInteraction;
-import com.protogax.hytaleworldjumps.system.PortalBreakProtectionSystem;
-import com.protogax.hytaleworldjumps.inventory.InventoryManager;
-import com.protogax.hytaleworldjumps.listener.WorldTransitionListener;
+import com.protogax.hytale.worldjumps.interaction.WorldJumpInteraction;
+import com.protogax.hytale.worldjumps.system.PortalBreakProtectionSystem;
+import com.protogax.hytale.worldjumps.inventory.InventoryManager;
+import com.protogax.hytale.worldjumps.listener.WorldTransitionListener;
 
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
 
-public class HytaleWorldJumpsPlugin extends JavaPlugin {
+public class WorldJumpsPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
@@ -45,7 +45,7 @@ public class HytaleWorldJumpsPlugin extends JavaPlugin {
         return worldManagerInstance;
     }
 
-    public HytaleWorldJumpsPlugin(@Nonnull JavaPluginInit init) {
+    public WorldJumpsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
     }
 

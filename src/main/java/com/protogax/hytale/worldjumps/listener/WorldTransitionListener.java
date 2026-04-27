@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.listener;
+package com.protogax.hytale.worldjumps.listener;
 
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
@@ -13,8 +13,8 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.protogax.hytaleworldjumps.WorldManager;
-import com.protogax.hytaleworldjumps.inventory.InventoryManager;
+import com.protogax.hytale.worldjumps.WorldManager;
+import com.protogax.hytale.worldjumps.inventory.InventoryManager;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;

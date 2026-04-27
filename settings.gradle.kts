@@ -1,4 +1,4 @@
-rootProject.name = "com.protogax.hytaleworldjumps"
+rootProject.name = "com.protogax.hytale.worldjumps"
 
 plugins {
     // See documentation on https://scaffoldit.dev
@@ -23,6 +23,6 @@ hytale {
     manifest {
         Group = "protogax"
         Name = "HytaleWorldJumps"
-        Main = "com.protogax.hytaleworldjumps.HytaleWorldJumpsPlugin"
+        Main = "com.protogax.hytale.worldjumps.WorldJumpsPlugin"
     }
 }

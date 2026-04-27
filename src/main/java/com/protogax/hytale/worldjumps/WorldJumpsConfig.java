@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps;
+package com.protogax.hytale.worldjumps;
 
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;

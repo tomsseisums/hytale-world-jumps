@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.inventory;
+package com.protogax.hytale.worldjumps.inventory;
 
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import org.bson.BsonDocument;

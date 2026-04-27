@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.system;
+package com.protogax.hytale.worldjumps.system;
 
 import com.hypixel.hytale.component.Archetype;
 import com.hypixel.hytale.component.ArchetypeChunk;

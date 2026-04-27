@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.inventory;
+package com.protogax.hytale.worldjumps.inventory;
 
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;

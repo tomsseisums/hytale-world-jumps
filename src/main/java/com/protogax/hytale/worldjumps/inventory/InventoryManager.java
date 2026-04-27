@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.inventory;
+package com.protogax.hytale.worldjumps.inventory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

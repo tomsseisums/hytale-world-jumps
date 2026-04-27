@@ -1,4 +1,4 @@
-package com.protogax.hytaleworldjumps.interaction;
+package com.protogax.hytale.worldjumps.interaction;
 
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
@@ -30,10 +30,10 @@ import com.hypixel.hytale.protocol.Color;
 
 import java.nio.file.Path;
 
-import com.protogax.hytaleworldjumps.HytaleWorldJumpsPlugin;
-import com.protogax.hytaleworldjumps.WorldJumpsConfig;
-import com.protogax.hytaleworldjumps.WorldManager;
-import com.protogax.hytaleworldjumps.inventory.InventoryManager;
+import com.protogax.hytale.worldjumps.WorldJumpsPlugin;
+import com.protogax.hytale.worldjumps.WorldJumpsConfig;
+import com.protogax.hytale.worldjumps.WorldManager;
+import com.protogax.hytale.worldjumps.inventory.InventoryManager;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -93,7 +93,7 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
         // Save current inventory before teleporting
         UUIDComponent uuidComp = commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
         if (uuidComp != null) {
-            InventoryManager invManager = HytaleWorldJumpsPlugin.getInventoryManager();
+            InventoryManager invManager = WorldJumpsPlugin.getInventoryManager();
             if (invManager != null) {
                 String currentWorldName = currentWorld != null ? currentWorld.getName() : null;
                 if (currentWorldName != null) {
@@ -135,7 +135,7 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
                 worldFuture = universe.loadWorld(resolvedWorldName);
             } else {
                 WorldConfig config = new WorldConfig();
-                WorldJumpsConfig pluginConfig = HytaleWorldJumpsPlugin.getPluginConfig();
+                WorldJumpsConfig pluginConfig = WorldJumpsPlugin.getPluginConfig();
                 String displayName = pluginConfig != null ? pluginConfig.getDisplayName(resolvedWorldName) : null;
                 config.setDisplayName(displayName != null ? displayName : WorldConfig.formatDisplayName(resolvedWorldName));
                 config.setGameMode(com.hypixel.hytale.protocol.GameMode.Creative);
@@ -173,7 +173,7 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
 
             worldFuture.orTimeout(1L, TimeUnit.MINUTES).thenAcceptAsync(world -> {
                 // Apply display name on load (in case it was loaded from disk without one)
-                WorldManager worldManager = HytaleWorldJumpsPlugin.getWorldManager();
+                WorldManager worldManager = WorldJumpsPlugin.getWorldManager();
                 if (worldManager != null) {
                     worldManager.applyDisplayName(world);
                 }
