@@ -35,6 +35,7 @@ import com.protogax.hytale.worldjumps.WorldJumpsPlugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 import org.joml.Vector3i;
 
@@ -93,6 +94,24 @@ public class PortalMapMarker implements Component<ChunkStore> {
     @Override
     public Component<ChunkStore> clone() {
         return new PortalMapMarker(this.name, this.icon, this.tint, this.targetWorld);
+    }
+
+    /**
+     * Overwrites this marker's fields with the given spec. Returns true if anything changed,
+     * so callers can mark the chunk dirty to persist the migration.
+     */
+    public boolean migrateToSpec(@Nonnull String name, @Nonnull String icon, @Nonnull Color tint, @Nonnull String targetWorld) {
+        boolean changed = !Objects.equals(this.name, name)
+            || !Objects.equals(this.icon, icon)
+            || !Objects.equals(this.targetWorld, targetWorld)
+            || !Objects.equals(this.tint, tint);
+        if (changed) {
+            this.name = name;
+            this.icon = icon;
+            this.tint = tint;
+            this.targetWorld = targetWorld;
+        }
+        return changed;
     }
 
     @Nonnull
@@ -174,13 +193,16 @@ public class PortalMapMarker implements Component<ChunkStore> {
 
                 // Hologram lifecycle: spawn on new placement; on chunk LOAD, refresh text
                 // (in case display-name config changed since the hologram was last saved).
+                // Legacy markers may have a null TargetWorld — refreshing with the resulting "?"
+                // would clobber any good text already set by reindex, so skip the refresh in
+                // that case and let the saved Nameplate stand.
                 World world = commandBuffer.getExternalData().getWorld();
                 if (world != null) {
-                    String displayName = resolveDisplayName(marker.getTargetWorld());
+                    String targetWorld = marker.getTargetWorld();
                     if (reason == AddReason.SPAWN) {
-                        PortalHologramService.ensureSpawned(world, pos, displayName);
-                    } else {
-                        PortalHologramService.refreshText(world, pos, displayName);
+                        PortalHologramService.ensureSpawned(world, pos, resolveDisplayName(targetWorld));
+                    } else if (targetWorld != null) {
+                        PortalHologramService.refreshText(world, pos, resolveDisplayName(targetWorld));
                     }
                 }
             }

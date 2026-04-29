@@ -106,13 +106,19 @@ public final class PortalHologramService {
                     continue;
                 }
                 Nameplate np = chunk.getComponent(i, Nameplate.getComponentType());
-                if (np != null) {
+                boolean textChanged = false;
+                if (np != null && !np.getText().equals(text)) {
                     np.setText(text);
+                    textChanged = true;
                 }
                 TransformComponent tc = chunk.getComponent(i, TransformComponent.getComponentType());
-                if (tc != null && !tc.getPosition().equals(desiredPos)) {
+                boolean positionChanged = tc != null && !tc.getPosition().equals(desiredPos);
+                if (positionChanged) {
                     tc.teleportPosition(desiredPos);
-                    // Mark the entity's chunk dirty so the new position actually persists across save/load.
+                }
+                // Nameplate.setText doesn't dirty the chunk on its own, so changes were lost
+                // across save/load until the next refresh re-applied them in memory.
+                if ((textChanged || positionChanged) && tc != null) {
                     tc.markChunkDirty(cmd);
                 }
                 found[0] = true;

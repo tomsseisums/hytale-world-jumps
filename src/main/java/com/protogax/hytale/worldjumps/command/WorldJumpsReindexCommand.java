@@ -1,14 +1,17 @@
 package com.protogax.hytale.worldjumps.command;
 
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.math.block.BlockUtil;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.protocol.Color;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.util.ColorParseUtil;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractWorldCommand;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.BlockChunk;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
@@ -75,7 +78,8 @@ public class WorldJumpsReindexCommand extends AbstractWorldCommand {
         }
 
         String summary = "[WorldJumps] Reindex complete in '" + result.worldName + "' — cleared "
-            + result.cleared + ", added " + result.added + " marker(s) across " + result.chunks + " loaded chunk(s)";
+            + result.cleared + ", added " + result.added + ", migrated " + result.migrated
+            + " marker(s) across " + result.chunks + " loaded chunk(s)";
         LOGGER.at(Level.INFO).log("%s", summary);
         context.sendMessage(Message.raw(summary));
     }
@@ -86,6 +90,7 @@ public class WorldJumpsReindexCommand extends AbstractWorldCommand {
         int[] addedCount = {0};
         int[] scannedChunks = {0};
         int[] clearedCount = {0};
+        int[] migratedCount = {0};
 
         // Track which chunks we've actually scanned and which portal positions we found.
         // Anything outside scanned chunks is left alone (chunks we can't see, can't migrate).
@@ -160,7 +165,43 @@ public class WorldJumpsReindexCommand extends AbstractWorldCommand {
             PortalHologramService.ensureSpawned(world, fp.position, displayName);
         }
 
-        return new WorldResult(world.getName(), addedCount[0], scannedChunks[0], clearedCount[0], null);
+        // Migrate existing per-block PortalMapMarker components to the current spec.
+        // Legacy chunks may have markers with a missing TargetWorld (or stale name/tint) that the
+        // codec deserializes as null; without this pass, on every chunk reload the OnAddRemove
+        // handler would still see null and cascade "?" into hologram text.
+        chunkStoreStore.forEachChunk(PortalMapMarker.getComponentType(), (archetypeChunk, commandBuffer) -> {
+            int size = archetypeChunk.size();
+            for (int i = 0; i < size; i++) {
+                PortalMapMarker marker = archetypeChunk.getComponent(i, PortalMapMarker.getComponentType());
+                BlockModule.BlockStateInfo blockInfo = archetypeChunk.getComponent(i, BlockModule.BlockStateInfo.getComponentType());
+                if (marker == null || blockInfo == null) {
+                    continue;
+                }
+                Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                if (!chunkRef.isValid()) {
+                    continue;
+                }
+                WorldChunk wc = commandBuffer.getComponent(chunkRef, WorldChunk.getComponentType());
+                if (wc == null) {
+                    continue;
+                }
+                Vector3i pos = new Vector3i(
+                    ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())),
+                    ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()),
+                    ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex()))
+                );
+                FoundPortal fp = foundPortals.get(BlockUtil.pack(pos));
+                if (fp == null) {
+                    continue;
+                }
+                if (marker.migrateToSpec(fp.def.name, fp.def.icon, fp.def.tint(), fp.def.targetWorld)) {
+                    blockInfo.markNeedsSaving(commandBuffer);
+                    migratedCount[0]++;
+                }
+            }
+        });
+
+        return new WorldResult(world.getName(), addedCount[0], scannedChunks[0], clearedCount[0], migratedCount[0], null);
     }
 
     private static long packChunk(int chunkX, int chunkZ) {
@@ -180,6 +221,6 @@ public class WorldJumpsReindexCommand extends AbstractWorldCommand {
         }
     }
 
-    private record WorldResult(String worldName, int added, int chunks, int cleared, Throwable error) {
+    private record WorldResult(String worldName, int added, int chunks, int cleared, int migrated, Throwable error) {
     }
 }
