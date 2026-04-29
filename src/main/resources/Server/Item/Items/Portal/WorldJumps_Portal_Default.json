@@ -24,6 +24,16 @@
     "PhysicalMaterialId": "Stone",
     "VariantRotation": "NESW",
     "Flags": {},
+    "BlockEntity": {
+      "Components": {
+        "WorldJumpsPortalMarker": {
+          "Name": "worldjumps.portal.marker",
+          "Icon": "Warp.png",
+          "Tint": "#404040",
+          "TargetWorld": "Default"
+        }
+      }
+    },
     "Gathering": {
       "Breaking": {
         "GatherType": "Unbreakable"

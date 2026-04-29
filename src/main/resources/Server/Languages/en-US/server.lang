@@ -1,2 +1,6 @@
 # === WorldJumps ===
+# Keys here are resolved via the "server." prefix (e.g. server.commands.worldjumps.desc).
+
 interactionHints.worldJump = Press [{key}] to jump to {name}
+commands.worldjumps.desc = WorldJumps administrative commands.
+commands.worldjumps.reindex.desc = Scan loaded chunks and register map markers for any WorldJumps portal blocks that were placed before the marker system was added (OP only).
