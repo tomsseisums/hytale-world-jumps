@@ -95,6 +95,32 @@ public class PortalMapMarker implements Component<ChunkStore> {
         return new PortalMapMarker(this.name, this.icon, this.tint, this.targetWorld);
     }
 
+    @Nonnull
+    public static String resolveDisplayName(@Nullable String targetWorld) {
+        if (targetWorld == null) {
+            return "?";
+        }
+        String resolvedName = WorldJumpsConfig.resolveWorldName(targetWorld);
+        if (resolvedName != null) {
+            World loaded = Universe.get().getWorld(resolvedName);
+            if (loaded != null) {
+                String dn = loaded.getWorldConfig().getDisplayName();
+                if (dn != null && !dn.isEmpty()) return dn;
+            }
+        }
+        WorldJumpsConfig config = WorldJumpsPlugin.getPluginConfig();
+        if (config != null) {
+            if ("Default".equals(targetWorld)) {
+                String dn = config.getDefaultWorldDisplayName();
+                if (dn != null && !dn.isEmpty()) return dn;
+            } else if (resolvedName != null) {
+                String dn = config.getDisplayName(resolvedName);
+                if (dn != null && !dn.isEmpty()) return dn;
+            }
+        }
+        return targetWorld;
+    }
+
     public static class MarkerProvider implements WorldMapManager.MarkerProvider {
         public static final MarkerProvider INSTANCE = new MarkerProvider();
 
@@ -113,32 +139,6 @@ public class PortalMapMarker implements Component<ChunkStore> {
                     .build();
                 collector.add(marker);
             }
-        }
-
-        @Nonnull
-        private static String resolveDisplayName(@Nullable String targetWorld) {
-            if (targetWorld == null) {
-                return "?";
-            }
-            String resolvedName = WorldJumpsConfig.resolveWorldName(targetWorld);
-            if (resolvedName != null) {
-                World loaded = Universe.get().getWorld(resolvedName);
-                if (loaded != null) {
-                    String dn = loaded.getWorldConfig().getDisplayName();
-                    if (dn != null && !dn.isEmpty()) return dn;
-                }
-            }
-            WorldJumpsConfig config = WorldJumpsPlugin.getPluginConfig();
-            if (config != null) {
-                if ("Default".equals(targetWorld)) {
-                    String dn = config.getDefaultWorldDisplayName();
-                    if (dn != null && !dn.isEmpty()) return dn;
-                } else if (resolvedName != null) {
-                    String dn = config.getDisplayName(resolvedName);
-                    if (dn != null && !dn.isEmpty()) return dn;
-                }
-            }
-            return targetWorld;
         }
     }
 
@@ -171,6 +171,18 @@ public class PortalMapMarker implements Component<ChunkStore> {
                 );
                 PortalMapMarkersResource resource = commandBuffer.getResource(RESOURCE_TYPE);
                 resource.addMarker(pos, marker.getName(), marker.getIcon(), marker.getTint(), marker.getTargetWorld());
+
+                // Hologram lifecycle: spawn on new placement; on chunk LOAD, refresh text
+                // (in case display-name config changed since the hologram was last saved).
+                World world = commandBuffer.getExternalData().getWorld();
+                if (world != null) {
+                    String displayName = resolveDisplayName(marker.getTargetWorld());
+                    if (reason == AddReason.SPAWN) {
+                        PortalHologramService.ensureSpawned(world, pos, displayName);
+                    } else {
+                        PortalHologramService.refreshText(world, pos, displayName);
+                    }
+                }
             }
         }
 
@@ -193,6 +205,11 @@ public class PortalMapMarker implements Component<ChunkStore> {
                     );
                     PortalMapMarkersResource resource = commandBuffer.getResource(RESOURCE_TYPE);
                     resource.removeMarker(pos);
+
+                    World world = commandBuffer.getExternalData().getWorld();
+                    if (world != null) {
+                        PortalHologramService.despawn(world, pos);
+                    }
                 }
             }
         }

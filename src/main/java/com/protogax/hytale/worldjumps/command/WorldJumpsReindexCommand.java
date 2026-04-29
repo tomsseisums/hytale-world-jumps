@@ -16,6 +16,8 @@ import com.hypixel.hytale.server.core.universe.world.chunk.section.BlockSection;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.FillerBlockUtil;
+import com.protogax.hytale.worldjumps.marker.PortalHologramService;
+import com.protogax.hytale.worldjumps.marker.PortalMapMarker;
 import com.protogax.hytale.worldjumps.marker.PortalMapMarkersResource;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -151,6 +153,11 @@ public class WorldJumpsReindexCommand extends AbstractWorldCommand {
         for (FoundPortal fp : foundPortals.values()) {
             resource.addMarker(fp.position, fp.def.name, fp.def.icon, fp.def.tint(), fp.def.targetWorld);
             addedCount[0]++;
+
+            // Ensure a hologram entity exists for this portal too. Idempotent — updates text
+            // if a hologram already exists, otherwise spawns a new one.
+            String displayName = PortalMapMarker.resolveDisplayName(fp.def.targetWorld);
+            PortalHologramService.ensureSpawned(world, fp.position, displayName);
         }
 
         return new WorldResult(world.getName(), addedCount[0], scannedChunks[0], clearedCount[0], null);

@@ -20,6 +20,7 @@ import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.protogax.hytale.worldjumps.command.WorldJumpsCommand;
 import com.protogax.hytale.worldjumps.interaction.WorldJumpInteraction;
+import com.protogax.hytale.worldjumps.marker.PortalHologramMarker;
 import com.protogax.hytale.worldjumps.marker.PortalMapMarker;
 import com.protogax.hytale.worldjumps.marker.PortalMapMarkersResource;
 import com.protogax.hytale.worldjumps.system.PortalBreakProtectionSystem;
@@ -38,6 +39,7 @@ public class WorldJumpsPlugin extends JavaPlugin {
     private static WorldManager worldManagerInstance;
     private static ComponentType<ChunkStore, PortalMapMarker> portalMarkerComponentType;
     private static ResourceType<ChunkStore, PortalMapMarkersResource> portalMarkersResourceType;
+    private static ComponentType<EntityStore, PortalHologramMarker> portalHologramMarkerComponentType;
 
     private final Config<WorldJumpsConfig> config = this.withConfig("config", WorldJumpsConfig.CODEC);
     private InventoryManager inventoryManager;
@@ -60,6 +62,10 @@ public class WorldJumpsPlugin extends JavaPlugin {
 
     public static ResourceType<ChunkStore, PortalMapMarkersResource> getPortalMarkersResourceType() {
         return portalMarkersResourceType;
+    }
+
+    public static ComponentType<EntityStore, PortalHologramMarker> getPortalHologramMarkerComponentType() {
+        return portalHologramMarkerComponentType;
     }
 
     public WorldJumpsPlugin(@Nonnull JavaPluginInit init) {
@@ -93,6 +99,8 @@ public class WorldJumpsPlugin extends JavaPlugin {
         // Register ECS systems
         ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
         entityStoreRegistry.registerSystem(new PortalBreakProtectionSystem());
+        portalHologramMarkerComponentType = entityStoreRegistry.registerComponent(
+            PortalHologramMarker.class, "WorldJumpsPortalHologramMarker", PortalHologramMarker.CODEC);
 
         // Register portal map-marker chunk-store component, resource, system, and provider
         ComponentRegistryProxy<ChunkStore> chunkStoreRegistry = getChunkStoreRegistry();
