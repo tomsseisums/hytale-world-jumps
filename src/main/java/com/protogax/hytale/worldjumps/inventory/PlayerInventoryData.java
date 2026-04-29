@@ -86,11 +86,18 @@ public class PlayerInventoryData {
         }
 
         for (short i = 0; i < capacity; i++) {
-            ItemStack item = slotMap.getOrDefault((int) i, ItemStack.EMPTY);
+            ItemStack item = slotMap.get((int) i);
             try {
-                combined.setItemStackForSlot(i, item);
+                if (item == null || item.isEmpty()) {
+                    // Use REMOVE path — armor slots have an ADD filter that rejects
+                    // ItemStack.EMPTY (its Item resolves to UNKNOWN, not a valid armor piece),
+                    // so setItemStackForSlot(slot, EMPTY) silently fails to clear the slot.
+                    combined.removeItemStackFromSlot(i);
+                } else {
+                    combined.setItemStackForSlot(i, item);
+                }
             } catch (Exception e) {
-                LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: setItemStackForSlot(%d) threw: %s", i, e.getMessage());
+                LOGGER.at(Level.WARNING).log("[WorldJumps] RESTORE: slot %d threw: %s", i, e.getMessage());
             }
         }
 
