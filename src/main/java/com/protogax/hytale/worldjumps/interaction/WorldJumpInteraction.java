@@ -148,8 +148,8 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
                             new FlatWorldGenProvider.Layer(0, 1, env, "Rock_Bedrock"),
                             new FlatWorldGenProvider.Layer(1, 70, env, "Rock_Stone"),
                             new FlatWorldGenProvider.Layer(70, 78, env, "Soil_Dirt"),
-                            new FlatWorldGenProvider.Layer(78, 80, env, "Soil_Grass"),
-                            new FlatWorldGenProvider.Layer(80, 320, env, "Empty")
+                            new FlatWorldGenProvider.Layer(78, 79, env, "Soil_Grass"),
+                            new FlatWorldGenProvider.Layer(79, 320, env, "Empty")
                         }
                     ));
                 } else {
