@@ -32,6 +32,20 @@ normal if you know what you are doing.
 
 For in-depth configuration, you can visit the [ScaffoldIt Plugin Docs](https://scaffoldit.dev).
 
+## Optional: Allow `/inventory clear` in Creative worlds
+
+Per-world inventories are restored automatically on world transitions, so players don't normally need to do anything. If you want to give them an in-chat escape hatch — `/inventory clear` (alias `/inv clear`) — Hytale gates that command behind the `hytale:Builder` group by default, which would also unlock a host of other Builder commands you probably don't want exposed.
+
+This plugin can grant **only** `hytale.system.command.inventory.clear`, **only while the player is in a managed Creative world**, and revoke it on exit/disconnect. Set the following in the plugin config (`devserver/mods/<plugin>/config.json` in dev, or the equivalent on a real server):
+
+```json
+{
+  "AllowClearInventoryInCreative": true
+}
+```
+
+Default is `false`. With it enabled, the permission is added per-user on entry to a Creative world and removed when leaving, so survival/default-world players never gain it.
+
 ## Troubleshooting
 
 - **Gradle sync fails in IntelliJ** –

@@ -30,11 +30,16 @@ public class WorldJumpsConfig {
             new KeyedCodec<>("DefaultWorldDisplayName", Codec.STRING),
             (c, v) -> c.defaultWorldDisplayName = v, c -> c.defaultWorldDisplayName
         ).add()
+        .<Boolean>append(
+            new KeyedCodec<>("AllowClearInventoryInCreative", Codec.BOOLEAN),
+            (c, v) -> c.allowClearInventoryInCreative = v, c -> c.allowClearInventoryInCreative
+        ).add()
         .build();
 
     private String hytaleCreativeDisplayName = "Hytale Creative";
     private String flatCreativeDisplayName = "Flat Creative";
     private String defaultWorldDisplayName = "";
+    private boolean allowClearInventoryInCreative = false;
 
     public WorldJumpsConfig() {
     }
@@ -49,6 +54,10 @@ public class WorldJumpsConfig {
 
     public String getDefaultWorldDisplayName() {
         return defaultWorldDisplayName;
+    }
+
+    public boolean isAllowClearInventoryInCreative() {
+        return allowClearInventoryInCreative;
     }
 
     public boolean isCreativeWorld(@Nullable String worldName) {

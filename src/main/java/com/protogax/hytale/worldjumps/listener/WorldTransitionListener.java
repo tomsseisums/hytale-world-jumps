@@ -10,13 +10,16 @@ import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.DrainPlayerFromWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.protogax.hytale.worldjumps.WorldJumpsPlugin;
 import com.protogax.hytale.worldjumps.WorldManager;
 import com.protogax.hytale.worldjumps.inventory.InventoryManager;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -24,6 +27,8 @@ public class WorldTransitionListener {
 
     @Nonnull
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+
+    private static final Set<String> INVENTORY_CLEAR_PERMISSION = Set.of("hytale.system.command.inventory.clear");
 
     private final WorldManager worldManager;
     private final InventoryManager inventoryManager;
@@ -109,13 +114,16 @@ public class WorldTransitionListener {
             World world = entityRef.getStore().getExternalData().getWorld();
             String worldName = world != null ? world.getName() : null;
 
-            if (worldManager.isCreativeWorld(worldName)) {
+            boolean isCreative = worldManager.isCreativeWorld(worldName);
+            if (isCreative) {
                 Player.setGameMode(entityRef, GameMode.Creative, entityRef.getStore());
                 LOGGER.at(Level.FINE).log("[WorldJumps] READY: set Creative mode for player=%s in '%s'", playerId, worldName);
             } else {
                 Player.setGameMode(entityRef, GameMode.Adventure, entityRef.getStore());
                 LOGGER.at(Level.FINE).log("[WorldJumps] READY: set Adventure mode for player=%s in '%s'", playerId, worldName);
             }
+
+            applyInventoryClearPermission(playerId, isCreative);
         } catch (Exception e) {
             LOGGER.at(Level.SEVERE).log("[WorldJumps] ERROR in onPlayerReady: %s", e.getMessage());
         }
@@ -131,8 +139,26 @@ public class WorldTransitionListener {
             UUID playerId = playerRef.getUuid();
             LOGGER.at(Level.INFO).log("[WorldJumps] Player disconnected: %s", playerRef.getUsername());
             inventoryManager.evict(playerId);
+            applyInventoryClearPermission(playerId, false);
         } catch (Exception e) {
             LOGGER.at(Level.SEVERE).log("[WorldJumps] ERROR in onPlayerDisconnect: %s", e.getMessage());
+        }
+    }
+
+    private void applyInventoryClearPermission(@Nonnull UUID playerId, boolean inCreativeWorld) {
+        if (!WorldJumpsPlugin.getPluginConfig().isAllowClearInventoryInCreative()) {
+            return;
+        }
+        PermissionsModule perms = PermissionsModule.get();
+        if (perms == null) {
+            return;
+        }
+        if (inCreativeWorld) {
+            perms.addUserPermission(playerId, INVENTORY_CLEAR_PERMISSION);
+            LOGGER.at(Level.FINE).log("[WorldJumps] Granted inventory.clear to player=%s (Creative world)", playerId);
+        } else {
+            perms.removeUserPermission(playerId, INVENTORY_CLEAR_PERMISSION);
+            LOGGER.at(Level.FINE).log("[WorldJumps] Revoked inventory.clear from player=%s", playerId);
         }
     }
 }
