@@ -138,8 +138,48 @@ public class WorldTransitionListener {
 
             UUID playerId = playerRef.getUuid();
             LOGGER.at(Level.INFO).log("[WorldJumps] Player disconnected: %s", playerRef.getUsername());
-            inventoryManager.evict(playerId);
-            applyInventoryClearPermission(playerId, false);
+
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef == null || !entityRef.isValid()) {
+                inventoryManager.evict(playerId);
+                applyInventoryClearPermission(playerId, false);
+                return;
+            }
+
+            World world = entityRef.getStore().getExternalData().getWorld();
+            String worldName = world != null ? world.getName() : null;
+            if (world == null || worldName == null || worldName.isBlank()) {
+                inventoryManager.evict(playerId);
+                applyInventoryClearPermission(playerId, false);
+                return;
+            }
+
+            // Disconnect bypasses DrainPlayerFromWorldEvent — Universe.removePlayer
+            // dispatches PlayerDisconnectEvent first, then schedules
+            // playerComponent.remove() on the world thread. Queueing here lands the
+            // snapshot in the world's task queue before that removal runs.
+            Runnable saveAndCleanup = () -> {
+                try {
+                    if (entityRef.isValid()) {
+                        Player player = entityRef.getStore().getComponent(entityRef, Player.getComponentType());
+                        if (player != null) {
+                            LOGGER.at(Level.FINE).log("[WorldJumps] DISCONNECT-SAVE: player=%s world='%s'", playerId, worldName);
+                            inventoryManager.saveInventory(player, playerId, worldName);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.at(Level.SEVERE).log("[WorldJumps] DISCONNECT-SAVE failed: player=%s world='%s' error=%s", playerId, worldName, e.getMessage());
+                } finally {
+                    inventoryManager.evict(playerId);
+                    applyInventoryClearPermission(playerId, false);
+                }
+            };
+
+            if (world.isInThread()) {
+                saveAndCleanup.run();
+            } else {
+                world.execute(saveAndCleanup);
+            }
         } catch (Exception e) {
             LOGGER.at(Level.SEVERE).log("[WorldJumps] ERROR in onPlayerDisconnect: %s", e.getMessage());
         }
