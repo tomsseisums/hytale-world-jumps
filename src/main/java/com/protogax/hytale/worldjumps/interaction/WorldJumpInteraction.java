@@ -157,6 +157,15 @@ public class WorldJumpInteraction extends SimpleInstantInteraction {
                     if (providerCodec != null) {
                         config.setWorldGenProvider(providerCodec.getDefaultValue());
                     }
+                    // Seed Hytale Creative from the default world so its terrain matches.
+                    World defaultWorld = universe.getDefaultWorld();
+                    if (defaultWorld != null) {
+                        long defaultSeed = defaultWorld.getWorldConfig().getSeed();
+                        config.setSeed(defaultSeed);
+                        LOGGER.at(Level.INFO).log("[WorldJumps] Seeding new world '%s' from default world seed %d", resolvedWorldName, defaultSeed);
+                    } else {
+                        LOGGER.at(Level.WARNING).log("[WorldJumps] Default world not available — '%s' will use a random seed", resolvedWorldName);
+                    }
                 }
 
                 Path savePath = universe.validateWorldPath(resolvedWorldName);
